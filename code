@@ -18,8 +18,8 @@ del(col)
 del(row)
 del(data)
 
-node_order = ['a', 'b', 'c']
-node_order_M = ['b', 'c', 'a']
+nodes_right = ['a', 'b', 'c']
+nodes_wrong = ['b', 'c', 'a']
 
 def sparse_swap(mat, nodes_right, nodes_wrong):
     """
@@ -39,12 +39,14 @@ def sparse_swap(mat, nodes_right, nodes_wrong):
     to have them comparable across different layers of 
     the same graph.
     """
+    nodes_right = dict(zip(nodes_right, np.arange(len(nodes_right)).tolist()))
     shifter = []
     i = 0
     while i < len(nodes_wrong): 
-        ind = nodes_right.index(nodes_wrong[i])
+        ind = nodes_right[nodes_wrong[i]]
         S = ind - i
         shifter.append(S)
+        del nodes_right[nodes_wrong[i]]
         i = i + 1
         
     cols = mat.indices.copy()
@@ -67,6 +69,10 @@ def sparse_swap(mat, nodes_right, nodes_wrong):
 
     mat.indices = rows
     return mat
+
+print(M.toarray())
+Mnew = sparse_swap(M, nodes_right, nodes_wrong)
+print(Mnew.toarray())
 
 print(M.toarray())
 Mnew = sparse_swap(M, node_order, node_order_M)
