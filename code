@@ -39,34 +39,45 @@ def sparse_swap(mat, nodes_right, nodes_wrong):
     to have them comparable across different layers of 
     the same graph.
     """
+    
     nodes_right = dict(zip(nodes_right, np.arange(len(nodes_right)).tolist()))
     shifter = []
+    doubles = []
     i = 0
-    while i < len(nodes_wrong): 
-        ind = nodes_right[nodes_wrong[i]]
+    while i < len(nodes_wrong):
+        if nodes_wrong[i] in nodes_right:
+            ind = nodes_right[nodes_wrong[i]]
+            del nodes_right[nodes_wrong[i]]
+        else:
+            doubles.append(nodes_wrong[i])
         S = ind - i
         shifter.append(S)
-        del nodes_right[nodes_wrong[i]]
+        print(f"Shifter: Loop {i:0.0f} of {len(nodes_wrong):0.0f}!")
         i = i + 1
-        
+    print(doubles)
+    
+    a = np.arange(len(nodes_wrong))
+    b = np.array(shifter)
+    mapping_values = a + b 
+    mapping = dict(zip( np.arange(len(nodes_wrong)).tolist(), mapping_values ))
+    print(mapping)
+    
     cols = mat.indices.copy()
     i = 0
-    while i < len(shifter): 
-        new = i + shifter[i]
-        cols[mat.indices == i] = new   
+    while i < len(mat.indices): 
+        cols[i] = mapping[mat.indices[i]]
         i = i + 1
-        
-    mat.indices = cols
     
+    mat.indices = cols
+
     mat = mat.tocsc()
 
     rows = mat.indices.copy()
     i = 0
-    while i < len(shifter): 
-        new = i + shifter[i]
-        rows[mat.indices == i] = new   
+    while i < len(mat.indices): 
+        rows[i] = mapping[mat.indices[i]]
         i = i + 1
-
+        
     mat.indices = rows
     return mat
 
@@ -74,6 +85,3 @@ print(M.toarray())
 Mnew = sparse_swap(M, nodes_right, nodes_wrong)
 print(Mnew.toarray())
 
-print(M.toarray())
-Mnew = sparse_swap(M, node_order, node_order_M)
-print(Mnew.toarray())
