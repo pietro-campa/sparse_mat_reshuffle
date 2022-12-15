@@ -1,0 +1,78 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Dec 14 09:12:53 2022
+
+@author: campa
+"""
+
+import numpy as np
+from scipy.sparse import csr_matrix, triu, diags
+from joblib import Parallel, delayed
+import multiprocessing
+
+num_cores = multiprocessing.cpu_count()
+
+def fill_shifter(i, nodes_wrong , nodes_right):
+    if nodes_wrong[i] in nodes_right:
+        ind = nodes_right[nodes_wrong[i]]
+        del nodes_right[nodes_wrong[i]]
+    else:
+        doubles.append(nodes_wrong[i])
+    S = ind - i
+    return S    
+    
+def swapper(i, mat, mapping):
+    return mapping[mat.indices[i]]
+
+    
+    
+
+row = np.array([0, 0, 1, 2, 2, 2])
+col = np.array([0, 2, 2, 0, 1, 2])
+data = np.array([1, 2, 3, 4, 5, 6])
+    
+    
+M = csr_matrix((data, (row, col)), shape=(3, 3))
+del(col)
+del(row)
+del(data)
+
+print(M.toarray())
+    
+nodes_right = ['a', 'b', 'c']
+nodes_wrong = ['b', 'c', 'a']
+    
+nodes_right = dict(zip(nodes_right, np.arange(len(nodes_right)).tolist()))
+doubles = []
+iterations = np.arange(len(nodes_wrong)).tolist()
+
+shifter = Parallel(
+    n_jobs=num_cores
+)(
+    delayed(fill_shifter)(i, nodes_wrong, nodes_right) for i in  np.arange(len(nodes_wrong)).tolist()
+)
+  
+print(doubles)
+    
+a = np.arange(len(nodes_wrong))
+b = np.array(shifter)
+mapping_values = a + b 
+mapping = dict(zip( np.arange(len(nodes_wrong)).tolist(), mapping_values ))
+print(mapping)
+
+M = triu(M, k=0, format='csr')
+print(M.toarray())
+
+cols = Parallel(
+    n_jobs=num_cores
+)(
+    delayed(swapper)(i, M, mapping) for i in  np.arange(len(M.indices)).tolist()
+)
+    
+M.indices = cols
+
+print(M.toarray())
+
+M = M+M.T-diags(M.diagonal(),dtype=int)
+
+print(M.toarray())
